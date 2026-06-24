@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>舞研 備品台帳</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#eeecea;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#9a9893;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);
+  --r:8px;--r-lg:12px;
+  --green-bg:#EAF3DE;--green-text:#3B6D11;
+  --red-bg:#FAECE7;--red-text:#993C1D;--red-border:#F5C4B3;
+  --blue-bg:#E6F1FB;--blue-text:#185FA5;--blue-border:#85B7EB;
+  --purple-bg:#EEEDFE;--purple-text:#3C3489;
+  --teal-bg:#E1F5EE;--teal-text:#0F6E56;
+  --amber-bg:#FAEEDA;--amber-text:#854F0B;
+  --coral-bg:#FAECE7;--coral-text:#993C1D;
+  --pink-bg:#FBEAF0;--pink-text:#72243E;
+  --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#242422;--bg3:#2c2c2a;
+    --text:#f0efe8;--text2:#b4b2a9;--text3:#666460;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --green-bg:#173404;--green-text:#97C459;
+    --red-bg:#4A1B0C;--red-text:#F0997B;--red-border:#993C1D;
+    --blue-bg:#042C53;--blue-text:#85B7EB;--blue-border:#185FA5;
+    --purple-bg:#26215C;--purple-text:#AFA9EC;
+    --teal-bg:#04342C;--teal-text:#5DCAA5;
+    --amber-bg:#412402;--amber-text:#EF9F27;
+    --coral-bg:#4A1B0C;--coral-text:#F0997B;
+    --pink-bg:#4B1528;--pink-text:#ED93B1;
+    --gray-bg:#2C2C2A;--gray-text:#B4B2A9;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;font-size:15px}
+
+/* ---- layout ---- */
+.app{max-width:680px;margin:0 auto;padding:0 0 80px}
+.topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:0.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.topbar h1{font-size:16px;font-weight:600;flex:1}
+.topbar-sub{font-size:11px;color:var(--text3)}
+.content{padding:12px 16px}
+
+/* ---- tabs ---- */
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:14px}
+.tab{flex:1;padding:10px 4px;font-size:13px;font-weight:500;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;text-align:center;transition:all 0.12s}
+.tab.active{color:var(--text);border-bottom-color:var(--text)}
+
+/* ---- stats ---- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 8px;text-align:center}
+.stat-num{font-size:22px;font-weight:600;line-height:1.1}
+.stat-label{font-size:11px;color:var(--text2);margin-top:2px}
+.stat-num.warn{color:var(--red-text)}
+
+/* ---- controls ---- */
+.controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.controls input,.controls select{font-size:13px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);flex:1;min-width:120px}
+
+/* ---- genre filter chips ---- */
+.chips{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:5px 12px;font-size:12px;font-weight:500;border-radius:99px;border:0.5px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;white-space:nowrap;transition:all 0.1s;flex-shrink:0}
+.chip.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+
+/* ---- item list (mobile-first: list view) ---- */
+.item-list{display:flex;flex-direction:column;gap:8px}
+.item-row{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r-lg);display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer;transition:border-color 0.1s}
+.item-row:hover{border-color:var(--border2)}
+.item-row.overdue{border-color:var(--red-border)}
+.item-thumb{width:56px;height:56px;border-radius:var(--r);background:var(--bg2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--text3)}
+.item-thumb img{width:100%;height:100%;object-fit:cover}
+.item-info{flex:1;min-width:0}
+.item-id{font-size:10px;color:var(--text3);margin-bottom:1px;font-family:monospace}
+.item-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.item-badges{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
+.badge-ok{background:var(--green-bg);color:var(--green-text)}
+.badge-out{background:var(--red-bg);color:var(--red-text)}
+.badge-overdue{background:var(--red-bg);color:var(--red-text);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.genre-badge-ドレス{background:var(--pink-bg);color:var(--pink-text)}
+.genre-badge-P服{background:var(--purple-bg);color:var(--purple-text)}
+.genre-badge-燕尾{background:var(--gray-bg);color:var(--gray-text)}
+.genre-badge-ラテシャツ{background:var(--teal-bg);color:var(--teal-text)}
+.genre-badge-ベスネク{background:var(--amber-bg);color:var(--amber-text)}
+.genre-badge-その他{background:var(--gray-bg);color:var(--gray-text)}
+
+/* ---- empty / loading ---- */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text2);font-size:14px}
+.empty i{font-size:36px;display:block;margin-bottom:10px;color:var(--text3)}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--blue-text);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:-4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---- fab ---- */
+.fab{position:fixed;bottom:24px;right:20px;z-index:100;background:var(--text);color:var(--bg);border:none;border-radius:99px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18)}
+
+/* ---- overlay / modal ---- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:600px){.overlay{align-items:center;padding:1rem}}
+.sheet{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto}
+@media(min-width:600px){.sheet{border-radius:var(--r-lg);max-height:88vh}}
+.sheet-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;position:sticky;top:0;background:var(--bg);border-bottom:0.5px solid var(--border);z-index:1}
+.sheet-hdr h2{font-size:16px;font-weight:600}
+.sheet-close{background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;line-height:1;padding:2px 8px}
+.sheet-body{padding:16px 18px}
+.sheet-ftr{padding:12px 18px 20px;border-top:0.5px solid var(--border);display:flex;gap:8px;flex-direction:column}
+
+/* ---- form ---- */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;font-size:14px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text)}
+.field textarea{height:72px;resize:vertical}
+.photo-drop{width:100%;height:140px;border:1.5px dashed var(--border2);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;color:var(--text3)}
+.photo-drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-drop-label{font-size:12px;margin-top:6px;position:relative}
+
+/* ---- buttons ---- */
+.btn{width:100%;padding:12px;font-size:14px;font-weight:600;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.1s}
+.btn:active{opacity:0.7}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn-loan{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue-text)}
+.btn-return{background:var(--green-bg);border-color:#C0DD97;color:var(--green-text)}
+.btn-danger{background:var(--red-bg);border-color:var(--red-border);color:var(--red-text)}
+.btn:disabled{opacity:0.45;cursor:not-allowed}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+
+/* ---- detail ---- */
+.detail-img{width:100%;height:200px;object-fit:cover;border-radius:var(--r);margin-bottom:14px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--text3)}
+.detail-img img{width:100%;height:200px;object-fit:cover;border-radius:var(--r);display:block}
+.detail-table{width:100%;border-collapse:collapse;font-size:14px}
+.detail-table tr{border-bottom:0.5px solid var(--border)}
+.detail-table tr:last-child{border:none}
+.detail-table td{padding:9px 0}
+.detail-table td:first-child{color:var(--text2);width:40%;padding-right:12px}
+.detail-table td:last-child{font-weight:500}
+.overdue-banner{background:var(--red-bg);color:var(--red-text);border-radius:var(--r);padding:8px 12px;font-size:13px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* ---- admin section ---- */
+.admin-toggle{text-align:center;padding:8px 0 0;font-size:12px;color:var(--text3);cursor:pointer;text-decoration:underline}
+.pw-row{display:flex;gap:8px;margin-top:8px}
+.pw-row input{flex:1;font-size:14px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text)}
+
+/* ---- loan list ---- */
+.loan-section{margin-bottom:20px}
+.section-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em}
+
+/* ---- toast ---- */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 20px;border-radius:99px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div style="flex:1">
+      <h1><i class="ti ti-shirt" aria-hidden="true" style="margin-right:6px"></i>舞研 備品台帳</h1>
+      <div class="topbar-sub">立教大学舞踏研究会</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="tabs">
+      <button class="tab active" data-tab="list">備品一覧</button>
+      <button class="tab" data-tab="loans">貸し出し中</button>
+    </div>
+
+    <!-- 一覧タブ -->
+    <div id="tab-list">
+      <div class="stats" id="stats">
+        <div class="stat"><div class="stat-num">—</div><div class="stat-label">総備品数</div></div>
+        <div class="stat"><div class="stat-num">—</div><div class="stat-label">貸し出し中</div></div>
+        <div class="stat"><div class="stat-num">—</div><div class="stat-label">期限超過</div></div>
+      </div>
+      <div class="chips" id="genre-chips">
+        <div class="chip active" data-genre="">すべて</div>
+        <div class="chip" data-genre="ドレス">ドレス</div>
+        <div class="chip" data-genre="P服">P服</div>
+        <div class="chip" data-genre="燕尾">燕尾</div>
+        <div class="chip" data-genre="ラテシャツ">ラテシャツ</div>
+        <div class="chip" data-genre="ベスネク">ベスネク</div>
+        <div class="chip" data-genre="その他">その他</div>
+      </div>
+      <div class="controls">
+        <input type="text" id="search" placeholder="備品名・ID・借受者で検索…" />
+        <select id="filter-status">
+          <option value="">すべての状態</option>
+          <option value="貸出可能">貸出可能</option>
+          <option value="貸出中">貸し出し中</option>
+        </select>
+      </div>
+      <div class="item-list" id="item-list">
+        <div class="empty"><span class="spinner"></span><br><br>読み込み中…</div>
+      </div>
+    </div>
+
+    <!-- 貸し出し中タブ -->
+    <div id="tab-loans" style="display:none">
+      <div id="loan-sections"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB：備品追加（管理者のみ、パスワード確認後に表示） -->
+<button class="fab" id="fab-add" style="display:none">
+  <i class="ti ti-plus" aria-hidden="true"></i>備品を追加
+</button>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== 備品詳細シート ===== -->
+<div class="overlay" id="modal-detail" style="display:none">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <h2 id="detail-title">備品詳細</h2>
+      <button class="sheet-close" id="close-detail">×</button>
+    </div>
+    <div class="sheet-body" id="detail-body"></div>
+    <div class="sheet-ftr" id="detail-ftr"></div>
+  </div>
+</div>
+
+<!-- ===== 貸し出しシート ===== -->
+<div class="overlay" id="modal-loan" style="display:none">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <h2 id="loan-item-name">貸し出し申請</h2>
+      <button class="sheet-close" id="close-loan">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="field"><label>お名前 *</label><input type="text" id="l-borrower" placeholder="例：山田 花子" /></div>
+      <div class="field"><label>貸し出し日 *</label><input type="date" id="l-date" /></div>
+      <div class="field"><label>返却予定日 *</label><input type="date" id="l-due" /></div>
+      <div class="field"><label>メモ（大会名など）</label><input type="text" id="l-note" placeholder="任意" /></div>
+    </div>
+    <div class="sheet-ftr">
+      <button class="btn btn-loan" id="save-loan"><i class="ti ti-arrow-right" aria-hidden="true"></i>貸し出し申請を送る</button>
+      <button class="btn" id="cancel-loan">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 返却確認シート ===== -->
+<div class="overlay" id="modal-return" style="display:none">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <h2>返却申請</h2>
+      <button class="sheet-close" id="close-return">×</button>
+    </div>
+    <div class="sheet-body">
+      <p style="font-size:14px;color:var(--text2);line-height:1.6" id="return-confirm-text"></p>
+    </div>
+    <div class="sheet-ftr">
+      <button class="btn btn-return" id="save-return"><i class="ti ti-check" aria-hidden="true"></i>返却を申請する</button>
+      <button class="btn" id="cancel-return">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 管理者：備品追加・編集シート ===== -->
+<div class="overlay" id="modal-edit" style="display:none">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <h2 id="edit-title">備品を追加</h2>
+      <button class="sheet-close" id="close-edit">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="field">
+        <label>写真</label>
+        <div class="photo-drop" id="photo-drop" role="button" tabindex="0">
+          <i class="ti ti-camera" style="font-size:28px" aria-hidden="true"></i>
+          <span class="photo-drop-label">タップして写真を選択</span>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" />
+      </div>
+      <div class="field"><label>ユニーク識別子 *</label><input type="text" id="e-id" placeholder="例：DRS-L-10" /></div>
+      <div class="field"><label>番号</label><input type="text" id="e-num" placeholder="例：10" /></div>
+      <div class="field"><label>備品名 *</label><input type="text" id="e-name" placeholder="例：ラテンドレス（赤）" /></div>
+      <div class="field"><label>ジャンル</label>
+        <select id="e-genre">
+          <option value="ドレス">ドレス</option>
+          <option value="P服">P服</option>
+          <option value="燕尾">燕尾</option>
+          <option value="ラテシャツ">ラテシャツ</option>
+          <option value="ベスネク">ベスネク</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="field"><label>備考</label><textarea id="e-memo" placeholder="サイズ・状態・付属品など"></textarea></div>
+    </div>
+    <div class="sheet-ftr">
+      <button class="btn btn-primary" id="save-edit"><i class="ti ti-check" aria-hidden="true"></i>保存</button>
+      <button class="btn btn-danger" id="delete-edit" style="display:none"><i class="ti ti-trash" aria-hidden="true"></i>この備品を削除</button>
+      <button class="btn" id="cancel-edit">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 管理者ログイン ===== -->
+<div class="overlay" id="modal-admin" style="display:none">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <h2>管理者モード</h2>
+      <button class="sheet-close" id="close-admin">×</button>
+    </div>
+    <div class="sheet-body">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px">管理者パスワードを入力してください。</p>
+      <div class="field"><label>パスワード</label><input type="password" id="admin-pw" placeholder="パスワード" /></div>
+      <p style="font-size:12px;color:var(--red-text)" id="admin-err" style="display:none"></p>
+    </div>
+    <div class="sheet-ftr">
+      <button class="btn btn-primary" id="save-admin">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ★ここにGASのWebアプリURLを貼り付ける
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw6XT3I5MEetGXqt4WZmINzEB2mVkjQ2oR3jgASO3QNY5ZjBGEKUB6le4Qh1mlQmYryBw/exec';
+
+let items = [];
+let activeGenre = '';
+let activeStatus = '';
+let loanTargetId = null;
+let returnTargetId = null;
+let editTargetId = null;
+let adminPassword = null;
+let pendingPhoto = null;
+
+// ---- utils ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function isOverdue(item) {
+  if (item['ステータス'] !== '貸出中') return false;
+  const due = item['最終返却予定日'];
+  if (!due) return false;
+  return new Date(due) < new Date();
+}
+
+function formatDate(str) {
+  if (!str) return '—';
+  return str.replace(/(\d{4})\/(\d{1,2})\/(\d{1,2})/, '$1/$2/$3');
+}
+
+function genreBadge(genre) {
+  const cls = 'genre-badge-' + (genre || 'その他');
+  return `<span class="badge ${cls}">${genre || 'その他'}</span>`;
+}
+
+// ---- API ----
+async function api(method, body) {
+  if (method === 'GET') {
+    const r = await fetch(GAS_URL + '?action=list');
+    if (!r.ok) throw new Error('通信エラー');
+    return r.json();
+  }
+  const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('通信エラー');
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+async function uploadPhoto(base64, filename) {
+  const r = await fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'uploadPhoto', base64, filename, password: adminPassword })
+  });
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data.url;
+}
+
+// ---- load ----
+async function loadItems() {
+  try {
+    const res = await api('GET');
+    items = res.items || [];
+    render();
+  } catch(e) {
+    document.getElementById('item-list').innerHTML =
+      '<div class="empty"><i class="ti ti-wifi-off"></i><br><br>データの取得に失敗しました。<br>GAS URLを確認してください。</div>';
+  }
+}
+
+// ---- render ----
+function render() {
+  renderStats();
+  renderList();
+  renderLoans();
+}
+
+function renderStats() {
+  const total = items.length;
+  const loaned = items.filter(i => i['ステータス'] === '貸出中').length;
+  const overdue = items.filter(isOverdue).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">総備品数</div></div>
+    <div class="stat"><div class="stat-num">${loaned}</div><div class="stat-label">貸し出し中</div></div>
+    <div class="stat"><div class="stat-num ${overdue > 0 ? 'warn' : ''}">${overdue}</div><div class="stat-label">期限超過</div></div>
+  `;
+}
+
+function renderList() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const st = document.getElementById('filter-status').value;
+  const filtered = items.filter(i => {
+    if (activeGenre && i['ジャンル'] !== activeGenre) return false;
+    if (st && i['ステータス'] !== st) return false;
+    if (q) {
+      const hay = [i['備品名'], i['ユニーク識別子'], i['借受者'], i['備考']].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const el = document.getElementById('item-list');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-mood-empty"></i><br><br>備品が見つかりません</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(i => {
+    const loaned = i['ステータス'] === '貸出中';
+    const over = isOverdue(i);
+    const stBadge = over
+      ? '<span class="badge badge-overdue"><i class="ti ti-alert-triangle" style="font-size:11px"></i> 期限超過</span>'
+      : loaned
+        ? '<span class="badge badge-out">貸出中</span>'
+        : '<span class="badge badge-ok">貸出可能</span>';
+    const thumb = i['写真URL']
+      ? `<div class="item-thumb"><img src="${i['写真URL']}" alt="" loading="lazy" /></div>`
+      : `<div class="item-thumb"><i class="ti ti-shirt" style="font-size:24px"></i></div>`;
+    const sub = loaned ? `<span style="font-size:12px;color:var(--text2)">${i['借受者']} / 返却予定 ${formatDate(i['最終返却予定日'])}</span>` : '';
+    return `<div class="item-row ${over ? 'overdue' : ''}" onclick="openDetail('${i['ユニーク識別子']}')">
+      ${thumb}
+      <div class="item-info">
+        <div class="item-id">${i['ユニーク識別子']}</div>
+        <div class="item-name">${i['備品名']}</div>
+        ${sub ? `<div class="item-sub">${sub}</div>` : ''}
+        <div class="item-badges">${genreBadge(i['ジャンル'])}${stBadge}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="color:var(--text3);font-size:16px;flex-shrink:0"></i>
+    </div>`;
+  }).join('');
+}
+
+function renderLoans() {
+  const loaned = items.filter(i => i['ステータス'] === '貸出中');
+  const overdue = loaned.filter(isOverdue);
+  const normal = loaned.filter(i => !isOverdue(i));
+
+  const el = document.getElementById('loan-sections');
+  if (!loaned.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-check"></i><br><br>貸し出し中の備品はありません</div>';
+    return;
+  }
+
+  function loanRows(arr) {
+    return arr.map(i => `
+      <div class="item-row ${isOverdue(i) ? 'overdue' : ''}" onclick="openDetail('${i['ユニーク識別子']}')">
+        <div class="item-info">
+          <div class="item-id">${i['ユニーク識別子']}</div>
+          <div class="item-name">${i['備品名']}</div>
+          <div class="item-sub" style="margin-top:3px">
+            <i class="ti ti-user" style="font-size:12px;vertical-align:-1px"></i> ${i['借受者']}
+            　返却予定: ${formatDate(i['最終返却予定日'])}
+          </div>
+        </div>
+        <i class="ti ti-chevron-right" style="color:var(--text3);font-size:16px;flex-shrink:0"></i>
+      </div>
+    `).join('');
+  }
+
+  let html = '';
+  if (overdue.length) {
+    html += `<div class="loan-section">
+      <div class="section-title" style="color:var(--red-text)"><i class="ti ti-alert-triangle"></i> 期限超過 (${overdue.length}件)</div>
+      <div class="item-list">${loanRows(overdue)}</div>
+    </div>`;
+  }
+  if (normal.length) {
+    html += `<div class="loan-section">
+      <div class="section-title">貸し出し中 (${normal.length}件)</div>
+      <div class="item-list">${loanRows(normal)}</div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ---- detail ----
+function openDetail(id) {
+  const i = items.find(x => x['ユニーク識別子'] === id);
+  if (!i) return;
+  const loaned = i['ステータス'] === '貸出中';
+  const over = isOverdue(i);
+
+  document.getElementById('detail-title').textContent = i['備品名'];
+
+  const imgHtml = i['写真URL']
+    ? `<div class="detail-img"><img src="${i['写真URL']}" alt="${i['備品名']}" /></div>`
+    : `<div class="detail-img" style="height:100px"><i class="ti ti-shirt" style="font-size:40px"></i></div>`;
+
+  const overdueHtml = over
+    ? `<div class="overdue-banner"><i class="ti ti-alert-triangle"></i>返却期限を過ぎています（${formatDate(i['最終返却予定日'])}）</div>`
+    : '';
+
+  document.getElementById('detail-body').innerHTML = `
+    ${imgHtml}
+    ${overdueHtml}
+    <table class="detail-table">
+      <tr><td>ID</td><td style="font-family:monospace;font-size:13px">${i['ユニーク識別子']}</td></tr>
+      <tr><td>ジャンル</td><td>${genreBadge(i['ジャンル'])}</td></tr>
+      <tr><td>状態</td><td>${loaned ? '<span class="badge badge-out">貸出中</span>' : '<span class="badge badge-ok">貸出可能</span>'}</td></tr>
+      ${loaned ? `<tr><td>借受者</td><td>${i['借受者']}</td></tr>` : ''}
+      ${loaned ? `<tr><td>貸し出し日</td><td>${formatDate(i['最終貸出日'])}</td></tr>` : ''}
+      ${loaned ? `<tr><td>返却予定日</td><td>${formatDate(i['最終返却予定日'])}</td></tr>` : ''}
+      ${i['備考'] ? `<tr><td>備考</td><td style="font-size:13px">${i['備考']}</td></tr>` : ''}
+    </table>
+    ${adminPassword ? `<div class="admin-toggle" onclick="openEdit('${id}')">管理者：編集する</div>` : `<div class="admin-toggle" onclick="document.getElementById('modal-detail').style.display='none';openAdminModal()">管理者の方はこちら</div>`}
+  `;
+
+  const ftr = document.getElementById('detail-ftr');
+  if (!loaned) {
+    ftr.innerHTML = `<button class="btn btn-loan" onclick="openLoan('${id}')"><i class="ti ti-arrow-right" aria-hidden="true"></i>この備品を借りる</button>`;
+  } else {
+    ftr.innerHTML = `<button class="btn btn-return" onclick="openReturn('${id}')"><i class="ti ti-arrow-back-up" aria-hidden="true"></i>返却を申請する</button>`;
+  }
+
+  document.getElementById('modal-detail').style.display = 'flex';
+}
+
+// ---- loan ----
+function openLoan(id) {
+  loanTargetId = id;
+  const i = items.find(x => x['ユニーク識別子'] === id);
+  document.getElementById('loan-item-name').textContent = i ? i['備品名'] : '貸し出し申請';
+  document.getElementById('l-borrower').value = '';
+  document.getElementById('l-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('l-due').value = '';
+  document.getElementById('l-note').value = '';
+  document.getElementById('modal-detail').style.display = 'none';
+  document.getElementById('modal-loan').style.display = 'flex';
+  setTimeout(() => document.getElementById('l-borrower').focus(), 150);
+}
+
+document.getElementById('save-loan').onclick = async () => {
+  const borrower = document.getElementById('l-borrower').value.trim();
+  const loanDate = document.getElementById('l-date').value;
+  const dueDate = document.getElementById('l-due').value;
+  if (!borrower) { showToast('お名前を入力してください'); return; }
+  if (!dueDate) { showToast('返却予定日を入力してください'); return; }
+  const btn = document.getElementById('save-loan');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await api('POST', { action: 'loan', id: loanTargetId, borrower, loanDate, dueDate, note: document.getElementById('l-note').value });
+    const i = items.find(x => x['ユニーク識別子'] === loanTargetId);
+    if (i) { i['ステータス'] = '貸出中'; i['借受者'] = borrower; i['最終貸出日'] = loanDate; i['最終返却予定日'] = dueDate; }
+    document.getElementById('modal-loan').style.display = 'none';
+    showToast('貸し出し申請を送りました');
+    render();
+  } catch(e) { showToast(e.message); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-arrow-right"></i>貸し出し申請を送る'; }
+};
+
+// ---- return ----
+function openReturn(id) {
+  returnTargetId = id;
+  const i = items.find(x => x['ユニーク識別子'] === id);
+  document.getElementById('return-confirm-text').textContent =
+    `「${i ? i['備品名'] : id}」の返却を申請します。部室の所定の場所に戻したことを確認してから送信してください。`;
+  document.getElementById('modal-detail').style.display = 'none';
+  document.getElementById('modal-return').style.display = 'flex';
+}
+
+document.getElementById('save-return').onclick = async () => {
+  const btn = document.getElementById('save-return');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await api('POST', { action: 'return', id: returnTargetId });
+    const i = items.find(x => x['ユニーク識別子'] === returnTargetId);
+    if (i) { i['ステータス'] = '貸出可能'; i['借受者'] = ''; i['最終返却予定日'] = ''; }
+    document.getElementById('modal-return').style.display = 'none';
+    showToast('返却申請を送りました');
+    render();
+  } catch(e) { showToast(e.message); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i>返却を申請する'; }
+};
+
+// ---- admin login ----
+function openAdminModal() {
+  document.getElementById('admin-pw').value = '';
+  document.getElementById('admin-err').textContent = '';
+  document.getElementById('modal-admin').style.display = 'flex';
+  setTimeout(() => document.getElementById('admin-pw').focus(), 150);
+}
+
+document.getElementById('save-admin').onclick = async () => {
+  const pw = document.getElementById('admin-pw').value;
+  try {
+    await api('POST', { action: 'add', item: { 'ユニーク識別子': '__test__', '備品名': '__test__' }, password: pw });
+  } catch(e) {
+    if (e.message.includes('パスワード')) {
+      document.getElementById('admin-err').textContent = 'パスワードが違います';
+      return;
+    }
+  }
+  adminPassword = pw;
+  document.getElementById('modal-admin').style.display = 'none';
+  document.getElementById('fab-add').style.display = 'flex';
+  showToast('管理者モードで入りました');
+};
+
+// ---- edit (admin) ----
+function openEdit(id) {
+  editTargetId = id || null;
+  pendingPhoto = null;
+  const i = id ? items.find(x => x['ユニーク識別子'] === id) : null;
+  document.getElementById('edit-title').textContent = i ? '備品を編集' : '備品を追加';
+  document.getElementById('e-id').value = i ? i['ユニーク識別子'] : '';
+  document.getElementById('e-id').disabled = !!i;
+  document.getElementById('e-num').value = i ? i['番号'] : '';
+  document.getElementById('e-name').value = i ? i['備品名'] : '';
+  document.getElementById('e-genre').value = i ? i['ジャンル'] : 'ドレス';
+  document.getElementById('e-memo').value = i ? i['備考'] : '';
+  document.getElementById('delete-edit').style.display = i ? 'flex' : 'none';
+  const drop = document.getElementById('photo-drop');
+  if (i && i['写真URL']) {
+    drop.innerHTML = `<img src="${i['写真URL']}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" /><span class="photo-drop-label" style="position:relative;background:rgba(0,0,0,0.4);color:#fff;padding:3px 8px;border-radius:4px">変更する</span>`;
+  } else {
+    resetPhotoDrop();
+  }
+  document.getElementById('modal-detail').style.display = 'none';
+  document.getElementById('modal-edit').style.display = 'flex';
+}
+
+function resetPhotoDrop() {
+  document.getElementById('photo-drop').innerHTML = `
+    <i class="ti ti-camera" style="font-size:28px" aria-hidden="true"></i>
+    <span class="photo-drop-label">タップして写真を選択</span>
+  `;
+}
+
+document.getElementById('photo-drop').addEventListener('click', () => document.getElementById('photo-input').click());
+document.getElementById('photo-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingPhoto = ev.target.result;
+    document.getElementById('photo-drop').innerHTML = `<img src="${pendingPhoto}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" /><span class="photo-drop-label" style="position:relative;background:rgba(0,0,0,0.4);color:#fff;padding:3px 8px;border-radius:4px">変更する</span>`;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('save-edit').onclick = async () => {
+  const uid = document.getElementById('e-id').value.trim();
+  const name = document.getElementById('e-name').value.trim();
+  if (!uid || !name) { showToast('IDと備品名は必須です'); return; }
+  const btn = document.getElementById('save-edit');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    let photoURL = editTargetId ? (items.find(x => x['ユニーク識別子'] === editTargetId) || {})['写真URL'] || '' : '';
+    if (pendingPhoto) {
+      photoURL = await uploadPhoto(pendingPhoto, uid + '.jpg');
+    }
+    const item = {
+      'ユニーク識別子': uid,
+      '番号': document.getElementById('e-num').value.trim(),
+      '備品名': name,
+      'ジャンル': document.getElementById('e-genre').value,
+      '備考': document.getElementById('e-memo').value.trim(),
+      '写真URL': photoURL,
+    };
+    if (editTargetId) {
+      await api('POST', { action: 'update', item, password: adminPassword });
+      const idx = items.findIndex(x => x['ユニーク識別子'] === editTargetId);
+      if (idx >= 0) items[idx] = Object.assign({}, items[idx], item);
+      showToast('更新しました');
+    } else {
+      item['ステータス'] = '貸出可能';
+      await api('POST', { action: 'add', item, password: adminPassword });
+      items.push(item);
+      showToast('追加しました');
+    }
+    document.getElementById('modal-edit').style.display = 'none';
+    render();
+  } catch(e) { showToast(e.message); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i>保存'; }
+};
+
+document.getElementById('delete-edit').onclick = async () => {
+  if (!confirm('この備品を削除しますか？')) return;
+  const btn = document.getElementById('delete-edit');
+  btn.disabled = true;
+  try {
+    await api('POST', { action: 'delete', id: editTargetId, password: adminPassword });
+    items = items.filter(x => x['ユニーク識別子'] !== editTargetId);
+    document.getElementById('modal-edit').style.display = 'none';
+    showToast('削除しました');
+    render();
+  } catch(e) { showToast(e.message); }
+  finally { btn.disabled = false; }
+};
+
+// ---- genre chips ----
+document.getElementById('genre-chips').addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  activeGenre = chip.dataset.genre;
+  renderList();
+});
+
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.tab;
+    document.getElementById('tab-list').style.display = tab === 'list' ? '' : 'none';
+    document.getElementById('tab-loans').style.display = tab === 'loans' ? '' : 'none';
+  };
+});
+
+// ---- search/filter ----
+document.getElementById('search').addEventListener('input', renderList);
+document.getElementById('filter-status').addEventListener('input', renderList);
+
+// ---- close buttons ----
+['detail','loan','return','edit','admin'].forEach(name => {
+  document.getElementById('close-' + name).onclick = () =>
+    document.getElementById('modal-' + name).style.display = 'none';
+});
+document.getElementById('cancel-loan').onclick = () => document.getElementById('modal-loan').style.display = 'none';
+document.getElementById('cancel-return').onclick = () => document.getElementById('modal-return').style.display = 'none';
+document.getElementById('cancel-edit').onclick = () => document.getElementById('modal-edit').style.display = 'none';
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
+// ---- fab ----
+document.getElementById('fab-add').onclick = () => openEdit(null);
+
+loadItems();
+</script>
+</body>
+</html>
